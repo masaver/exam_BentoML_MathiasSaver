@@ -1,0 +1,12 @@
+bentoml
+joblib
+numpy
+pandas
+pathlib
+pip
+pydantic
+pyjwt
+pytest
+requests
+scikit-learn
+xgboost

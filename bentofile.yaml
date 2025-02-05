@@ -1,0 +1,21 @@
+service: "src.service:xgb_service"
+description: "XGB-Regressor for prediction of admission probability"
+labels:
+  owner: "masaver"
+  project: "admission_prediction"
+include:
+  - "*.py"  # Include Python files
+  - "models/"  # Include a models directory
+  - "data/"  # Include a data directory
+  - "requirements.txt"  # Include a requirements.txt file
+python:
+  requirements_txt: "requirements.txt"
+docker:
+  distro: "debian"
+  system_packages:
+    - curl
+    - libssl-dev
+  python_version: "3.8.10"
+  system_packages:
+    - curl
+    - libgomp1  # Needed for XGBoost
