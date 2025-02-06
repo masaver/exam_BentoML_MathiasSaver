@@ -1,5 +1,7 @@
 bentoml
+ipykernel
 joblib
+jupyter
 numpy
 pandas
 pathlib

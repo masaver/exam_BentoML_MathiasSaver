@@ -35,6 +35,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             request.state.user = payload.get("sub")
 
         response = await call_next(request)
+
         return response
     
 # Pydantic model to validate input data
@@ -52,6 +53,9 @@ xgb_reg_runner = bentoml.sklearn.get("rf_regressor:latest").to_runner()
 
 # Create a service API
 rf_reg_service = bentoml.Service("rf_reg_service", runners = [ xgb_reg_runner ] )
+
+# Add the JWTAuthMiddleware to the service
+rf_reg_service.add_asgi_middleware(JWTAuthMiddleware)
 
 # Create a login endpoint
 @rf_reg_service.api(input=JSON(), output=JSON())
