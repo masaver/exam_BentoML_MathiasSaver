@@ -1,14 +1,14 @@
 import os
-import json
 import pickle
 import bentoml
-import xgboost as xgb
+from sklearn.ensemble import RandomForestRegressor
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler  
+import json
+# rom sklearn.preprocessing import StandardScaler  
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-from sklearn.pipeline import Pipeline
+# from sklearn.pipeline import Pipeline
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -33,13 +33,13 @@ y_test = pd.read_csv('data/processed/y_test.csv')
 # Grid Search to find the best hyperparameters
 param_grid = {
     'n_estimators': [50, 100, 200],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'max_depth': [3, 5, 7]
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'bootstrap': [True, False]
 }
-
-xgb_regressor = xgb.XGBRegressor(objective='reg:squarederror')
 grid_search = GridSearchCV(
-    estimator = xgb_regressor , 
+    estimator =  RandomForestRegressor( random_state=17 ) , 
     param_grid = param_grid , 
     cv = 5 , 
     scoring = 'neg_mean_squared_error' , 
@@ -52,7 +52,7 @@ print(f'Best score: {-1*grid_search.best_score_}')
 
 # Save the best model to a .pkl file
 reg = grid_search.best_estimator_
-with open('models/xgb_regressor.pkl', 'wb') as f:
+with open('models/rf_regressor.pkl', 'wb') as f:
     pickle.dump( reg , f )
 
 # Model evaluation
@@ -91,5 +91,5 @@ with open('models/performance_metrics.json', 'w') as f:
 os.system('cat models/performance_metrics.json')
 
 # Save the model in BentoML's Model Store
-model_ref = bentoml.sklearn.save_model("xbg_regressor", reg )
+model_ref = bentoml.sklearn.save_model("rf_regressor", reg )
 print(f"Model saved as: {model_ref}")

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import secrets
 
 # Secret key and algorithm for JWT authentication
-JWT_SECRET_KEY = "a53acfc5d7124a23208ee88950aa34c43d828cb10c496440fef760b628ce0593"
+JWT_SECRET_KEY = "super_secret_key_obtained_from_somewhere_!@#$"
 JWT_ALGORITHM = "HS256"
 
 # User credentials for authentication
@@ -19,7 +19,7 @@ USERS = {
 
 class JWTAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        if request.url.path == "/v1/models/xgb_regressor/predict":
+        if request.url.path == "/v1/models/rf_regressor/predict":
             token = request.headers.get("Authorization")
             if not token:
                 return JSONResponse(status_code=401, content={"detail": "Missing authentication token"})
@@ -48,13 +48,13 @@ class InputModel(BaseModel):
     research: int
 
 # Get the model from the Model Store
-xgb_reg_runner = bentoml.sklearn.get("xbg_regressor:latest").to_runner()
+xgb_reg_runner = bentoml.sklearn.get("rf_regressor:latest").to_runner()
 
 # Create a service API
-xgb_service = bentoml.Service("xgb_reg_service", runners = [ xgb_reg_runner ] )
+rf_reg_service = bentoml.Service("rf_reg_service", runners = [ xgb_reg_runner ] )
 
 # Create a login endpoint
-@xgb_service.api(input=JSON(), output=JSON())
+@rf_reg_service.api(input=JSON(), output=JSON())
 def login(credentials: dict) -> dict:
     username = credentials.get("username")
     password = credentials.get("password")
@@ -67,10 +67,10 @@ def login(credentials: dict) -> dict:
         return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})
 
 # Create an API endpoint for the service
-@xgb_service.api(
+@rf_reg_service.api(
     input = JSON( pydantic_model = InputModel ) ,
     output = JSON() ,
-    route='v1/models/xgb_regressor/predict'
+    route='v1/models/rf_regressor/predict'
 )
 async def predict(input_data: InputModel) -> dict:
     

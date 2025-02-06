@@ -9,4 +9,3 @@ pyjwt
 pytest
 requests
 scikit-learn
-xgboost

@@ -1,5 +1,5 @@
-service: "src.service:xgb_service"
-description: "XGB-Regressor for prediction of admission probability"
+service: "src.service:rf_reg_service"
+description: "RF-Regressor for prediction of admission probability"
 labels:
   owner: "masaver"
   project: "admission_prediction"
@@ -15,7 +15,7 @@ docker:
   system_packages:
     - curl
     - libssl-dev
-  python_version: "3.8.10"
+  python_version: "3.12.3"
   system_packages:
     - curl
     - libgomp1  # Needed for XGBoost
