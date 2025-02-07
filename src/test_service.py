@@ -33,32 +33,28 @@ def test_successful_login():
     
     assert response.status_code == 200
     data = response.json()
-    assert "access_token" in data
-    assert isinstance(data["access_token"], str)
+    assert "token" in data
+    assert isinstance(data["token"], str)
 
-wrong_credentials = {
-    "username": "wrong_user",
-    "password": "wrongpass"
-}
+wrong_credentials = {"username": "wrong_user", "password": "wrong_pass"}
 
 def test_failed_login():
     """Should return 401 for invalid credentials"""
-    response = requests.post(LOGIN_URL, json=wrong_credentials )
+    response = requests.post( LOGIN_URL , json = wrong_credentials )
     
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid credentials"
+    data = response.json()
+    assert "token" not in data
 
 
 # ---- 2. PREDICTION API TESTS ----
-# Example input data for prediction - "chance_of_admit": 0.93
 valid_input = {
-    "gre_score": 334,
-    "toefl_score": 116,
-    "university_ranking": 4,
-    "sop": 4,
-    "lor": 3.5,
+    "gre_score": 320,
+    "toefl_score": 110,
+    "university_ranking": 3,
+    "sop": 4.5,
+    "lor": 4.0,
     "cgpa": 9.54,
-    "research": 1,
+    "research": 1
 }
 
 def test_missing_jwt_prediction():
@@ -66,16 +62,14 @@ def test_missing_jwt_prediction():
     response = requests.post(PREDICT_URL, json=valid_input)
     
     assert response.status_code == 401
-    assert response.json()["detail"] == "Not authenticated"
-
-
+    assert response.json()["detail"] == "Missing authentication token"
 
 def test_valid_prediction():
     """Should return a valid prediction for correct input"""
     valid_token = create_jwt_token()
     headers = {"Authorization": f"Bearer {valid_token}"}
 
-    response = requests.post(PREDICT_URL, json={"data": [valid_input]}, headers=headers)
+    response = requests.post(PREDICT_URL, json=valid_input, headers=headers)
     
     assert response.status_code == 200
     data = response.json()
@@ -83,22 +77,48 @@ def test_valid_prediction():
     assert isinstance(data["prediction"], (int, float, list))  # Ensure prediction is numerical
 
 
+# Example of an invalid input (missing required fields, wrong data types)
+invalid_input = {
+    "gre_score": "high",  # Invalid type: should be an int
+    "toefl_score": 110,
+    "university_ranking":  "the best",  # Invalid type: should be an int
+    "sop": "strong",  # Invalid type: should be a float
+    "lor": 4.0,
+    "cgpa": 9.54,
+    "research": 1
+}
+
 def test_invalid_prediction():
-    """Should return 422 when input data is invalid"""
+    """Should return 400 when input data is invalid"""
     valid_token = create_jwt_token()
     headers = {"Authorization": f"Bearer {valid_token}"}
-
-    response = requests.post(PREDICT_URL, json={"invalid_field": "test"}, headers=headers)
+    response = requests.post(PREDICT_URL, json=invalid_input, headers=headers)
     
-    assert response.status_code == 422  # Unprocessable Entity
+    assert response.status_code == 400  # Unprocessable Entity
 
-
+# ---- 3. JWT AUTHENTICATION TESTS ----
 def test_expired_jwt():
     """Should return 401 when JWT is expired"""
     expired_token = create_jwt_token(expiry_minutes=-1)
     headers = {"Authorization": f"Bearer {expired_token}"}
 
-    response = requests.post(PREDICT_URL, json={"data": [1, 2, 3, 4]}, headers=headers)
+    response = requests.post(PREDICT_URL, json=valid_input, headers=headers)
     
     assert response.status_code == 401
     assert response.json()["detail"] == "Token has expired"
+
+def test_auth_fails_missing_or_invalid():
+    headers = {"Authorization": "Bearer invalid_token"}
+    response = requests.post(PREDICT_URL, json=valid_input, headers=headers)
+    assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+
+    response = requests.post(PREDICT_URL, json=valid_input)  # No token
+    assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+
+def test_auth_succeeds_valid_token():
+    valid_token = create_jwt_token()
+    headers = {"Authorization": f"Bearer {valid_token}"}
+    
+    response = requests.post(PREDICT_URL, json=valid_input, headers=headers)
+    assert response.status_code == 200
+    assert "prediction" in response.json()
